@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bigyapan - Location Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f4f4;padding:20px}.box{max-width:650px;margin:auto;background:#fff;padding:25px;border-radius:15px}button{padding:12px 16px;border:0;border-radius:9px;background:#222;color:#fff}.card{margin-top:18px;padding:16px;border:1px solid #ddd;border-radius:12px}a{word-break:break-all}.small{color:#666;font-size:14px}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>📍 Bigyapan Location Dashboard</h2>
+<p class="small">URL मा <b>?token=YOUR_TOKEN</b> राखेर हेर्नुहोस्।</p>
+<button onclick="loadLocations()">Refresh</button>
+<div id="result"></div>
+</div>
+<script>
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_KEY="YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+async function loadLocations(){
+ const result=document.getElementById("result"), token=new URLSearchParams(location.search).get("token");
+ if(!token){result.innerHTML="<p>Dashboard token छैन।</p>";return}
+ result.innerHTML="<p>Loading...</p>";
+ const {data,error}=await supabaseClient.from("locations").select("latitude,longitude,accuracy,created_at").eq("token",token).order("created_at",{ascending:false}).limit(20);
+ if(error){result.innerHTML="<p>Data पढ्न मिलेन। Supabase RLS policy जाँच गर्नुहोस्।</p>";return}
+ if(!data.length){result.innerHTML="<p>अहिलेसम्म location आएको छैन।</p>";return}
+ result.innerHTML=data.map((x,i)=>{const map="https://www.google.com/maps?q="+x.latitude+","+x.longitude;return `<div class="card"><b>Location #${i+1}</b><br>Latitude: ${Number(x.latitude).toFixed(6)}<br>Longitude: ${Number(x.longitude).toFixed(6)}<br>Accuracy: ${Math.round(x.accuracy||0)} m<br>Time: ${new Date(x.created_at).toLocaleString()}<br><br><a href="${map}" target="_blank" rel="noopener">📍 Google Maps मा खोल्नुहोस्</a></div>`}).join("");
+}
+loadLocations();
+</script>
+</body>
+</html>
