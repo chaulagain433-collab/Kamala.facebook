@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bigyapan - Location Sharing</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f4f4;padding:20px}.box{max-width:520px;margin:auto;background:#fff;padding:25px;border-radius:15px;box-shadow:0 4px 18px #0001}button{width:100%;padding:15px;border:0;border-radius:10px;background:#222;color:#fff;font-size:17px}#status{margin-top:20px;line-height:1.6}.note{font-size:14px;color:#666}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>📍 Bigyapan Location Sharing</h2>
+<p>आफ्नो location share गर्न तलको बटन थिच्नुहोस्। Browser ले permission मागेपछि <b>Allow</b> गरे मात्र location पठाइन्छ।</p>
+<button id="shareBtn" onclick="shareLocation()">Location Share गर्नुहोस्</button>
+<div id="status"></div>
+<p class="note">यो पेजले अनुमति बिना GPS location लिँदैन।</p>
+</div>
+<script>
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_KEY="YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+async function shareLocation(){
+ const btn=document.getElementById("shareBtn"), status=document.getElementById("status");
+ const token=new URLSearchParams(location.search).get("token");
+ if(!token){status.textContent="यो sharing link मा token छैन।";return}
+ if(!navigator.geolocation){status.textContent="यो browser ले location support गर्दैन।";return}
+ btn.disabled=true; status.textContent="Location permission मागिँदैछ...";
+ navigator.geolocation.getCurrentPosition(async p=>{
+  const lat=p.coords.latitude, lon=p.coords.longitude, accuracy=p.coords.accuracy;
+  const {error}=await supabaseClient.from("locations").insert({token,latitude:lat,longitude:lon,accuracy});
+  if(error){console.error(error);status.textContent="Location save हुन सकेन।"}
+  else{const map="https://www.google.com/maps?q="+lat+","+lon;status.innerHTML="<b>Location सफलतापूर्वक share भयो।</b><br><br><a href='"+map+"' target='_blank' rel='noopener'>📍 Google Maps मा खोल्नुहोस्</a>"}
+  btn.disabled=false;
+ },()=>{status.textContent="Location permission Allow गर्नुहोस् वा browser settings जाँच गर्नुहोस्।";btn.disabled=false},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+</script>
+</body>
+</html>
